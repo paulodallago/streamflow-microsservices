@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "fastify": "^5.8.5",
+    "moleculer": "^0.15.0",
     "pino-pretty": "^13.1.3"
   }
 }

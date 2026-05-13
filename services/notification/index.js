@@ -15,47 +15,67 @@
  *     persiste nada, apenas simula o envio.
  */
 
-const Fastify = require('fastify');
+const Fastify = require("fastify");
+const { ServiceBroker } = require("moleculer");
 
 const app = Fastify({ logger: true });
+
+const broker = new ServiceBroker({
+  logger: console,
+  transporter: "TCP",
+});
 
 const PORT = process.env.PORT || 3005;
 
 // ── Rotas ───────────────────────────────────────────────────
 
-// POST /notify — simula envio de notificação
-app.post('/notify', async (request, reply) => {
-  const { userId, type, message } = request.body || {};
+broker.createService({
+  name: "notify",
 
-  if (!userId || !message) {
-    return reply.code(400).send({ error: 'userId e message são obrigatórios.' });
-  }
+  events: {
+    "playback.started": async (ctx) => {
+      const { userId, type, message } = ctx.params || {};
 
-  // Simula latência de processamento de notificação (100-300ms)
-  const delay = 100 + Math.floor(Math.random() * 200);
-  await new Promise(resolve => setTimeout(resolve, delay));
+      if (!userId || !message) {
+        app.log.warn("userId e message são obrigatórios.");
+        return;
+      }
 
-  app.log.info({ userId, type, delay }, `Notificação enviada (simulada em ${delay}ms)`);
+      // Simula latência de processamento de notificação (100-300ms)
+      const delay = 100 + Math.floor(Math.random() * 200);
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
-  return {
-    sent: true,
-    userId,
-    type: type || 'generic',
-    message,
-    processingTime: `${delay}ms`,
-  };
+      app.log.info(
+        { userId, type, delay },
+        `Notificação enviada (simulada em ${delay}ms)`,
+      );
+
+      return {
+        sent: true,
+        userId,
+        type: type || "generic",
+        message,
+        processingTime: `${delay}ms`,
+      };
+    },
+  },
 });
 
 // GET /health
-app.get('/health', async () => ({
-  status: 'ok',
-  service: 'notification-service',
+app.get("/health", async () => ({
+  status: "ok",
+  service: "notification-service",
   uptime: process.uptime(),
   timestamp: new Date().toISOString(),
 }));
 
 // ── Inicialização ───────────────────────────────────────────
-app.listen({ port: PORT, host: '0.0.0.0' }, (err) => {
-  if (err) { app.log.error(err); process.exit(1); }
+app.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
+  await broker.start();
+
+  if (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
   app.log.info(`notification-service rodando na porta ${PORT}`);
 });
