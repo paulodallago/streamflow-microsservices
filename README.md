@@ -2,6 +2,13 @@
 
 Para análise de um sistema de microserviços
 
+## Arquivos da entrega
+
+Na pasta /entrega estão:
+
+- PDF do relatório
+- Coleção do Postman
+
 ### Branch master
 
 - Código atualizado com melhorias e implementação do Moleculer para comunicação entre serviços
